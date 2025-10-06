@@ -3,29 +3,44 @@ package main
 import (
 	"fmt"
 	"log"
+	// "net/http"
 
-	"database/sql"
-	_ "github.com/lib/pq"
-
-	"github.com/EugenioBarbieriViale/codice-atlantico/config"
+	"github.com/EugenioBarbieriViale/codice-atlantico/database"
 )
 
 func main() {
-	cfg := config.NewConfig()
-	args := cfg.ToString()
+	cfg := database.DefaultConfig()
 
-	fmt.Println("Connecting to database...")
-	db, err := sql.Open("postgres", args)
-
-	if err != nil {
-		log.Fatal(err)
-	}
+	db, err := database.Connect(cfg)
+	check(err)
 	defer db.Close()
 
-	err = db.Ping()
+	b, err := database.NewBook("test1", "test2", "test3", 0.0, "test4")
+	check(err)
+
+	err = db.AddBook(b)
+	check(err)
+
+	booksContent, err := database.ShowTable[database.Book](db, "books")
+	check(err)
+
+	fmt.Println(booksContent)
+
+	// http.Handle("/", http.FileServer(http.Dir("./static")))
+
+	// http.HandleFunc("/hi", func(w http.ResponseWriter, r *http.Request) {
+	// 	fmt.Fprintf(w, "Hello")
+	// })
+
+	// port := "5000" 
+	// fmt.Println("server running on port", port)
+
+	// log.Fatal(http.ListenAndServe(":" + port, nil))
+}
+
+func check(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println("Connected to database")
 }
+

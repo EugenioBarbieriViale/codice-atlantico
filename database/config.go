@@ -1,4 +1,4 @@
-package config
+package database
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ type Config struct {
 	Sslmode string
 }
 
-func NewConfig() Config {
+func DefaultConfig() Config {
 	return Config{
 		User     : os.Getenv("DB_USER"),
 		Password : os.Getenv("DB_PASS"),
@@ -33,7 +33,7 @@ func (c Config) ToString() string {
 
 	config_str := ""
 	for i := 0; i < v.NumField(); i++ {
-		if name_str := string(t.Field(i).Name); i != v.NumField() {
+		if name_str := t.Field(i).Name; i != v.NumField() {
 			config_str += strings.ToLower(name_str) + "="
 			config_str += fmt.Sprintf("%v", v.Field(i).Interface()) + " "
 		}
