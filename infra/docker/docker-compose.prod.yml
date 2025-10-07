@@ -36,6 +36,20 @@ services:
     ports:
       - "8080:8080"
 
+  chat:
+    build:
+      context: ../../apps/chat
+      target: prod
+    networks: [appnet]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ../env/env.prod
+      - ../env/secrets.env
+    ports:
+      - "8082:8082"
+
   frontend:
     build:
       target: prod
