@@ -1,2 +1,2 @@
 # codice-atlantico
-http://127.0.0.1:8000/static/
+http://localhost:5000/
