@@ -1,0 +1,58 @@
+services:
+  db:
+    env_file:
+      - ../env/env.dev
+      - ../env/secrets.env
+
+  migrate:
+    image: migrate/migrate:4
+    container_name: migrate
+    networks: [appnet]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ../env/env.dev
+      - ../env/secrets.env
+    entrypoint: ["/usr/local/bin/migrate"]
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://leonardo:devpassword@db:5432/biblioteca-ambrosiana?sslmode=disable",
+        "up",
+      ]
+    volumes:
+      - ../db/migrations:/migrations:ro
+    restart: "no"
+
+  backend:
+    build:
+      target: dev
+    env_file:
+      - ../env/env.dev
+      - ../env/secrets.env
+    volumes:
+      - ../../apps/backend:/app
+      - gocache:/go
+    command: ["air", "-c", ".air.toml"]
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      target: dev
+    env_file:
+      - ../env/env.dev
+      - ../env/secrets.env
+    volumes:
+      - ../../apps/frontend:/app
+      - node_modules_frontend:/app/node_modules
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+    ports:
+      - "3000:3000"
+
+volumes:
+  gocache:
+  node_modules_frontend:

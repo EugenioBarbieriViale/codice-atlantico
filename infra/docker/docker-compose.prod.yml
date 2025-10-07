@@ -1,0 +1,61 @@
+services:
+  db:
+    env_file:
+      - ../env/env.prod
+      - ../env/secrets.env
+
+  migrate:
+    image: migrate/migrate:4
+    container_name: migrate
+    networks: [appnet]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ../env/env.dev
+      - ../env/secrets.env
+    entrypoint: ["/usr/local/bin/migrate"]
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://leonardo:devpassword@db:5432/biblioteca-ambrosiana?sslmode=disable",
+        "up",
+      ]
+    volumes:
+      - ../db/migrations:/migrations:ro
+    restart: "no"
+
+  backend:
+    build:
+      target: prod
+    env_file:
+      - ../env/env.prod
+      - ../env/secrets.env
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      target: prod
+    env_file:
+      - ../env/env.prod
+      - ../env/secrets.env
+    command: ["node", "build/index.js"]
+    ports:
+      - "3000:3000"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+    networks: [appnet]
+    ports:
+      - "80:80"
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro

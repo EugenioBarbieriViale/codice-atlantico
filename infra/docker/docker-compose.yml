@@ -1,0 +1,66 @@
+name: codice-atlantico
+
+networks:
+  appnet:
+
+volumes:
+  pgdata:
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: db
+    networks: [appnet]
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: leonardo
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: biblioteca-ambrosiana
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leonardo -d biblioteca-ambrosiana"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../db/init:/docker-entrypoint-initdb.d:ro
+
+  migrate:
+    image: migrate/migrate:4
+    container_name: migrate
+    networks: [appnet]
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ../db/migrations:/migrations:ro
+    restart: "no"
+
+  backend:
+    build:
+      context: ../../
+      dockerfile: apps/backend/Dockerfile
+    image: codice-atlantico/backend:latest
+    container_name: backend
+    networks: [appnet]
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ../../
+      dockerfile: apps/frontend/Dockerfile
+    image: codice-atlantico/frontend:latest
+    container_name: frontend
+    networks: [appnet]
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "3000:3000"
