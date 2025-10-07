@@ -7,6 +7,7 @@ npm-debug.log*
 # Go
 apps/backend/tmp
 apps/backend/bin
+apps/chat/target
 
 # Docker
 infra/env/secrets.env

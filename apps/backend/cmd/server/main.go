@@ -38,15 +38,15 @@ func main() {
 	// Connect to Postgres
 	db, err := sql.Open("pgx", dbURL)
 	if err != nil {
-		log.Fatalf("❌ Failed to open DB connection: %v", err)
+		log.Fatalf("Failed to open DB connection: %v", err)
 	}
 	defer db.Close()
 
 	// Verify connection at startup
 	if err := db.Ping(); err != nil {
-		log.Fatalf("❌ Database not reachable: %v", err)
+		log.Fatalf("Database not reachable: %v", err)
 	}
-	log.Println("✅ Connected to Postgres successfully")
+	log.Println("Connected to Postgres successfully")
 
 	// Initialize Fiber app
 	app := fiber.New()
@@ -61,7 +61,7 @@ func main() {
 	// --- Health check route ---
 	app.Get("/healthz", func(c *fiber.Ctx) error {
 		if err := db.Ping(); err != nil {
-			log.Println("❌ DB health check failed:", err)
+			log.Println("DB health check failed:", err)
 			return c.Status(500).JSON(fiber.Map{"status": "db unavailable"})
 		}
 		return c.JSON(fiber.Map{"status": "ok"})
@@ -74,13 +74,13 @@ func main() {
 		}
 	}()
 
-	log.Printf("🚀 Backend running on port %s", port)
+	log.Printf("Backend running on port %s", port)
 
 	// Wait for Ctrl+C / SIGTERM to stop gracefully
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	<-sig
-	log.Println("🛑 Shutting down backend...")
+	log.Println("Shutting down backend...")
 	_ = app.Shutdown()
-	log.Println("✅ Server stopped cleanly")
+	log.Println("Server stopped cleanly")
 }
