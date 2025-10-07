@@ -24,7 +24,7 @@ type Book struct {
 	Title string
 	Author string
 	Isbn string
-	Price float64
+	Price float64 `json:",string"`
 	Owner string
 }
 
@@ -39,18 +39,15 @@ func NewBook(params ...any) (Book, error) {
 		return Book{}, errors.New("too many parameters")
 	}
 
-	uuidField := v.Field(0)
-    if uuidField.Type() == reflect.TypeOf(uuid.UUID{}) && uuidField.CanSet() {
-        uuidField.Set(reflect.ValueOf(uuid.New()))
-    }
-
 	for i, p := range params {
-		field := v.Field(i + 1)
-		fieldType := t.Field(i + 1).Type
+		idx := i + 1
+
+		field := v.Field(idx)
+		fieldType := t.Field(idx).Type
 
 		if reflect.TypeOf(p) != fieldType {
 			return Book{}, fmt.Errorf("type mismatch at parameter %d (got %v instead of %v)", 
-				i+1, reflect.TypeOf(p), fieldType)
+				idx, reflect.TypeOf(p), fieldType)
 		}
 
 		if field.CanSet() {
@@ -87,15 +84,17 @@ func (c *Connection) Close() error {
 	return c.Db.Close()
 }
 
-func (c *Connection) AddBook(b Book) error {
-    q := `INSERT INTO books (id, title, author, isbn, price, owner) 
-          VALUES ($1, $2, $3, $4, $5, $6)
+func (c *Connection) AddBook(b *Book) error {
+    q := `INSERT INTO books (title, author, isbn, price, owner) 
+          VALUES ($1, $2, $3, $4, $5)
           RETURNING id`
     
-    _, err := c.Db.Exec(q, b.Id, b.Title, b.Author, b.Isbn, b.Price, b.Owner)
+	var id uuid.UUID
+    err := c.Db.QueryRow(q, b.Title, b.Author, b.Isbn, b.Price, b.Owner).Scan(&id)
 	if err != nil {
 		return err
 	}
+	b.Id = id
 
     return nil
 }

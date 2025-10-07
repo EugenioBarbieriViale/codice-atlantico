@@ -1,8 +1,5 @@
 package main
 
-// TODO
-// - fix float64 json
-
 import (
 	"fmt"
 	"log"
@@ -22,17 +19,6 @@ func main() {
 	}
 	defer db.Close()
 
-	// b, err := database.NewBook("test1", "test2", "test3", 0.0, "test4")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// booksContent, err := database.ShowTable[database.Book](db, "books")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// fmt.Printf("%v\n", booksContent)
 
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
@@ -52,21 +38,29 @@ func main() {
 		
 		if r.Method != "POST" {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
+			log.Fatal("Cannot handle POST requests")
 		}
 		
 		book := getBook(w, r)
 		if book.Title == "" {
 			http.Error(w, "Title is required", http.StatusBadRequest)
-			return
+			log.Fatal("Title cannot be empty")
 		}
+		book.Owner = "test"
+
 		fmt.Println(book)
 
-		// err := db.AddBook(book)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-		// fmt.Fprintf(w, "Book added")
+		err := db.AddBook(&book)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Book added with ID: %v", book.Id)
+
+		booksContent, err := database.ShowTable[database.Book](db, "books")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%v\n", booksContent)
 	})
 
 	port := "5000" 
