@@ -14,7 +14,7 @@ form.addEventListener("submit", function(e) {
     e.preventDefault();
 
     const book = {
-        name: document.getElementById("bookName").value,
+        title: document.getElementById("title").value,
         author: document.getElementById("author").value,
         isbn: document.getElementById("isbn").value,
         price: parseFloat(document.getElementById("price").value).toFixed(2)
@@ -22,13 +22,6 @@ form.addEventListener("submit", function(e) {
 
     books.push(book);
 
-    // var bookData = JSON.stringify({
-    //       "name": book.name,
-    //       "author": book.author,
-    //       "isbn": book.isbn,
-    //       "price": book.price
-    // });
-    
     var bookData = JSON.stringify(book);
     sendBook(bookData);
 
@@ -44,7 +37,7 @@ function displayBooks() {
 
     container.innerHTML = books.map(book => `
         <div class="book-item">
-            <div class="book-title">${book.name}</div>
+            <div class="book-title">${book.title}</div>
             <div class="book-author">by ${book.author}</div>
             <div class="book-details">
                 <span><strong>ISBN:</strong> ${book.isbn}</span>
