@@ -1,0 +1,18 @@
+# Node
+apps/frontend/node_modules
+apps/frontend/.svelte-kit
+apps/frontend/build
+npm-debug.log*
+
+# Go
+apps/backend/tmp
+apps/backend/bin
+apps/chat/target
+
+# Docker
+infra/env/secrets.env
+*.local
+.DS_Store
+
+# IDE
+.vscode
