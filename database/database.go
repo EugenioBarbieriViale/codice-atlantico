@@ -4,7 +4,8 @@ package database
 // psql -U eu maindb
 
 // TODO
-// - generalize addBook to any type
+// - showTable fix sql injection
+// - book wrapper struct
 
 import (
 	"fmt"
@@ -104,7 +105,7 @@ func (c *Connection) GetTables() ([]string, error) {
         SELECT table_name 
         FROM information_schema.tables 
         WHERE table_schema = 'public' 
-        ORDER BY table_name;
+        ORDER BY table_name
     `
 
 	rows, err := c.Db.Query(q)
@@ -132,40 +133,34 @@ func (c *Connection) GetTables() ([]string, error) {
 	return tableNames, nil
 }
 
-func ShowTable[T any](c *Connection, table string) ([]T, error) {
+func GetRow[T any](c *Connection, id uuid.UUID, table string) (T, error) {
 	if ts, _ := c.GetTables(); !slices.Contains(ts, table) {
 		log.Fatalf("%s is not a table", table)
 	}
 
-	q := fmt.Sprintf("SELECT * FROM %s", table)
+	var empty T
+	q := fmt.Sprintf("SELECT * FROM %s WHERE id='%s'", table, id.String())
 
-	rows, err := c.Db.Query(q)
+	row := c.Db.QueryRow(q)
+
+	var res T
+	newItem := reflect.New(reflect.TypeOf(res)).Elem()
+	
+	var fieldPtrs []any
+	for i := 0; i < newItem.NumField(); i++ {
+		fieldPtrs = append(fieldPtrs, newItem.Field(i).Addr().Interface())
+	}
+	
+	err := row.Scan(fieldPtrs...)
 	if err != nil {
-		return nil, err
+		return empty, err
 	}
-	defer rows.Close()
+	
+	res = newItem.Interface().(T)
 
-	var data []T
-	for rows.Next() {
-		var empty T
-		newItem := reflect.New(reflect.TypeOf(empty)).Elem()
-		
-		var fieldPtrs []any
-		for i := 0; i < newItem.NumField(); i++ {
-			fieldPtrs = append(fieldPtrs, newItem.Field(i).Addr().Interface())
-		}
-		
-		err := rows.Scan(fieldPtrs...)
-		if err != nil {
-			return nil, err
-		}
-		
-		data = append(data, newItem.Interface().(T))
+	if err := row.Err(); err != nil {
+		return empty, err
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return data, nil
+	return res, nil
 }
